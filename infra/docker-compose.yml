@@ -1,0 +1,51 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: docuflow-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: docuflowdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - docuflow-net
+    healthcheck: # 👈 Add a healthcheck to ensure the DB is ready
+      test: ["CMD-SHELL", "pg_isready -U admin -d docuflowdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s # 👈 Wait up to 10 seconds for the container to start checking
+
+  mongo:
+    image: mongo:7
+    container_name: docuflow-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+    networks:
+      - docuflow-net
+
+  pulsar:
+    image: apachepulsar/pulsar:3.2.0
+    container_name: docuflow-pulsar
+    command: >
+      bin/pulsar standalone
+    ports:
+      - "6650:6650"
+      - "8085:8080"
+    networks:
+      - docuflow-net
+
+volumes:
+  pgdata:
+  mongodata:
+
+networks:
+  docuflow-net:
+    driver: bridge
